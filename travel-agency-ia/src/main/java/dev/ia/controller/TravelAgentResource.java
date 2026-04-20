@@ -1,7 +1,7 @@
 package dev.ia.controller;
 
 
-import dev.ia.config.PackageExpertWithTemplate;
+import dev.ia.assistant.TravelAssistant;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -9,14 +9,14 @@ import jakarta.ws.rs.core.MediaType;
 /**
  * Endpoint REST que expõe o assistente virtual da agência de viagens.
  * <p>
- * Recebe mensagens dos clientes via HTTP e as repassa ao {@link PackageExpertWithTemplate},
+ * Recebe mensagens dos clientes via HTTP e as repassa ao {@link TravelAssistant},
  * que combina RAG e ferramentas MCP para gerar respostas contextualizadas.
  */
 @Path("/travel")
 public class TravelAgentResource {
 
     @Inject
-    PackageExpertWithTemplate packageExpert;
+    TravelAssistant packageExpert;
 
     /**
      * Recebe a pergunta do usuário e retorna a resposta do assistente de IA.

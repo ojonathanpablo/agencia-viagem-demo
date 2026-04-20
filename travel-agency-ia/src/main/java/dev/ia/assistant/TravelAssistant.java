@@ -1,8 +1,10 @@
-package dev.ia.config;
+package dev.ia.assistant;
 
+import dev.ia.config.InjectionGuard;
 import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
+import dev.langchain4j.service.guardrail.InputGuardrails;
 import io.quarkiverse.langchain4j.RegisterAiService;
 import io.quarkiverse.langchain4j.mcp.runtime.McpToolBox;
 
@@ -15,7 +17,7 @@ import io.quarkiverse.langchain4j.mcp.runtime.McpToolBox;
  * enriquecendo cada pergunta com contexto extraído dos documentos indexados.
  */
 @RegisterAiService
-public interface PackageExpertWithTemplate  {
+public interface TravelAssistant {
 
     /**
      * Processa a mensagem do usuário e retorna a resposta do assistente.
@@ -50,5 +52,6 @@ public interface PackageExpertWithTemplate  {
         """)
     @McpToolBox("booking-server")
     @UserMessage("Do what user is asking {message}. The user used for authentication is {username}.")
+    @InputGuardrails(InjectionGuard.class)
     String chat(@MemoryId String memoryId, String message, String username);
 }
