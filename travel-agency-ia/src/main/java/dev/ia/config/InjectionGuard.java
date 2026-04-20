@@ -4,8 +4,10 @@ import dev.ia.assistant.SecurityExpert;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.guardrail.InputGuardrail;
 import dev.langchain4j.guardrail.InputGuardrailResult;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+@ApplicationScoped
 public class InjectionGuard implements InputGuardrail {
 
     @Inject

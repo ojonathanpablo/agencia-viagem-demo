@@ -2,6 +2,8 @@ package dev.ia.controller;
 
 
 import dev.ia.assistant.TravelAssistant;
+import dev.ia.dto.ChatResponse;
+import dev.langchain4j.guardrail.InputGuardrailException;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -27,16 +29,21 @@ public class TravelAgentResource {
      *
      * @param question  pergunta ou instrução enviada pelo cliente no corpo da requisição
      * @param userName  nome do usuário autenticado, obtido do cabeçalho {@code X-User-Name}
-     * @return          resposta gerada pelo assistente, ou mensagem de erro se não autenticado
+     * @return          {@link ChatResponse} com o nome do usuário e a resposta gerada pelo assistente
      */
     @POST
     @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.TEXT_PLAIN)
-    public String ask(String question, @HeaderParam("X-User-Name") String userName) {
+    @Produces(MediaType.APPLICATION_JSON)
+    public ChatResponse ask(String question, @HeaderParam("X-User-Name") String userName) {
         if (userName != null && !userName.isEmpty()) {
-            return packageExpert.chat(userName, question, userName);
+            try {
+                String message = packageExpert.chat(userName, question, userName);
+                return new ChatResponse(userName, message);
+            } catch (InputGuardrailException e) {
+                return new ChatResponse(userName, "Desculpe, não consigo processar essa mensagem. Por favor, reformule sua pergunta.");
+            }
         } else {
-            return "Usuário precisa estar autenticado!";
+            return new ChatResponse(null, "Usuário precisa estar autenticado!");
         }
     }
 
