@@ -1,67 +1,71 @@
 # mcp-booking-server
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Servidor MCP (Model Context Protocol) de gerenciamento de reservas de viagem, construído com Quarkus. Expõe ferramentas via SSE que podem ser invocadas por clientes LangChain4j (como o `travel-agency-ai`) durante a geração de respostas do LLM.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+## Pré-requisitos
 
-## Running the application in dev mode
+- Java 21+
+- Maven 3.9+
 
-You can run your application in dev mode that enables live coding using:
+> Não requer Docker nem Ollama — os dados são mantidos em memória.
 
-```shell script
+---
+
+## 1. Executar a aplicação
+
+```shell
 ./mvnw quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+O servidor MCP estará disponível em: http://localhost:8081
 
-## Packaging and running the application
+Endpoint SSE (usado pelo cliente LangChain4j): http://localhost:8081/mcp/sse/
 
-The application can be packaged using:
+Dev UI disponível em: http://localhost:8081/q/dev/
 
-```shell script
+---
+
+## 2. Ferramentas MCP disponíveis
+
+| Ferramenta | Descrição |
+|---|---|
+| `Lista todas as reservas de viagem de um usuário específico.` | Retorna todas as reservas de um cliente pelo nome |
+| `Obtém os detalhes completos de uma reserva com base em seu número de identificação (bookingId).` | Busca uma reserva pelo ID |
+| `Cria uma nova reserva de viagem para o usuário autenticado.` | Cria uma reserva com destino, datas e categoria |
+| `Cancela uma reserva existente com base no seu ID (bookingId).` | Cancela uma reserva, validando o titular |
+| `Lista os pacotes de viagem disponíveis para uma determinada categoria (ex: ADVENTURE, TREASURES).` | Lista destinos disponíveis por categoria |
+
+---
+
+## 3. Dados de exemplo pré-carregados
+
+O servidor inicializa com três reservas de demonstração:
+
+| ID | Cliente | Destino | Categoria | Status |
+|---|---|---|---|---|
+| 12345 | John Doe | Tesouros do Egito | TREASURES | CONFIRMED |
+| 67890 | Jane Smith | Aventura Amazônia | ADVENTURE | CONFIRMED |
+| 98765 | Peter Jones | Trilha Inca | ADVENTURE | CONFIRMED |
+
+> Os dados são armazenados em memória — ao reiniciar, voltam ao estado inicial.
+
+---
+
+## Empacotamento
+
+```shell
 ./mvnw package
 ```
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+Gera o arquivo `target/quarkus-app/quarkus-run.jar`. Para executar:
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
+```shell
+java -jar target/quarkus-app/quarkus-run.jar
 ```
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+---
 
-## Creating a native executable
+## Guias relacionados
 
-You can create a native executable using:
-
-```shell script
-./mvnw package -Dnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/mcp-booking-server-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
-
-## Related Guides
-
-- REST ([guide](https://quarkus.io/guides/rest)): A Jakarta REST implementation utilizing build time processing and Vert.x. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it.
-- MCP Server - HTTP/SSE ([guide](https://docs.quarkiverse.io/quarkus-mcp-server/dev/index.html)): This extension enables developers to implement the MCP server features easily.
-
-## Provided Code
-
-### REST
-
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+- [Quarkus MCP Server](https://docs.quarkiverse.io/quarkus-mcp-server/dev/index.html)
+- [Quarkus REST](https://quarkus.io/guides/rest)
