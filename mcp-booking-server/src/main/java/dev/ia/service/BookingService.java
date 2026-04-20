@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
 
 /**
  * Serviço responsável pela lógica de negócio de reservas de viagem.
@@ -22,8 +21,6 @@ import java.util.logging.Logger;
  */
 @ApplicationScoped
 public class BookingService {
-
-    private static final Logger LOG = Logger.getLogger(BookingService.class.getName());
 
     private final Map<Long, Booking> bookings = new HashMap<>();
 
@@ -95,8 +92,6 @@ public class BookingService {
         long id = idSequence.incrementAndGet();
         Booking booking = new Booking(id, customerName, destination, startDate, endDate, BookingStatus.CONFIRMED, category);
         bookings.put(id, booking);
-        LOG.info("Reserva criada: ID=%d | Cliente=%s | Destino=%s | %s até %s".formatted(id, customerName, destination, startDate, endDate));
-
         return booking;
     }
 
