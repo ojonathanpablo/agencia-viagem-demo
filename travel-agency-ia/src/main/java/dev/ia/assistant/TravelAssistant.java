@@ -1,10 +1,13 @@
 package dev.ia.assistant;
 
-import dev.ia.config.InjectionGuard;
+import dev.ia.config.guard.InjectionGuard;
+import dev.ia.config.guard.JsonStructureGuard;
+import dev.ia.config.guard.ToneGuardrail;
 import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.guardrail.InputGuardrails;
+import dev.langchain4j.service.guardrail.OutputGuardrails;
 import io.quarkiverse.langchain4j.RegisterAiService;
 import io.quarkiverse.langchain4j.mcp.runtime.McpToolBox;
 
@@ -53,5 +56,36 @@ public interface TravelAssistant {
     @McpToolBox("booking-server")
     @UserMessage("Do what user is asking {message}. The user used for authentication is {username}.")
     @InputGuardrails(InjectionGuard.class)
+    @OutputGuardrails(ToneGuardrail.class)
     String chat(@MemoryId String memoryId, String message, String username);
+
+    /**
+     * Lista os pacotes de viagem disponíveis para uma categoria e retorna a resposta em JSON válido.
+     * <p>
+     * O {@link JsonStructureGuard} intercepta a resposta do LLM e garante que seja um JSON válido.
+     * Se o LLM retornar texto com markdown ou formato inválido, ele é instruído a reprocessar
+     * até gerar um JSON correto.
+     * <p>
+     * Exemplo de retorno esperado:
+     * <pre>
+     * {
+     *   "categoria": "ADVENTURE",
+     *   "pacotes": [
+     *     { "destino": "Aventura Amazônia", "duracao": "7 dias" },
+     *     { "destino": "Trilha Inca", "duracao": "8 dias" }
+     *   ]
+     * }
+     * </pre>
+     *
+     * @param category categoria dos pacotes a listar (ex: ADVENTURE, TREASURES)
+     * @return string contendo JSON válido com os pacotes da categoria informada
+     */
+    @SystemMessage("""
+        Você é um assistente da 'Mundo Viagens' especialista em pacotes de viagem.
+        Responda SEMPRE com um JSON válido, sem blocos de código markdown, sem texto adicional.
+        Apenas o JSON puro.
+        """)
+    @UserMessage("Liste os pacotes de viagem disponíveis para a categoria {category} em formato JSON.")
+    @OutputGuardrails(JsonStructureGuard.class)
+    String listPackagesAsJson(String category);
 }

@@ -2,8 +2,8 @@ package dev.ia.controller;
 
 
 import dev.ia.assistant.TravelAssistant;
-import dev.ia.dto.ChatResponse;
 import dev.langchain4j.guardrail.InputGuardrailException;
+import dev.langchain4j.guardrail.OutputGuardrailException;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -29,22 +29,39 @@ public class TravelAgentResource {
      *
      * @param question  pergunta ou instrução enviada pelo cliente no corpo da requisição
      * @param userName  nome do usuário autenticado, obtido do cabeçalho {@code X-User-Name}
-     * @return          {@link ChatResponse} com o nome do usuário e a resposta gerada pelo assistente
+     * @return          resposta gerada pelo assistente, ou mensagem de erro se não autenticado
      */
     @POST
     @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.APPLICATION_JSON)
-    public ChatResponse ask(String question, @HeaderParam("X-User-Name") String userName) {
+    @Produces(MediaType.TEXT_PLAIN)
+    public String ask(String question, @HeaderParam("X-User-Name") String userName) {
         if (userName != null && !userName.isEmpty()) {
             try {
-                String message = packageExpert.chat(userName, question, userName);
-                return new ChatResponse(userName, message);
+                return packageExpert.chat(userName, question, userName);
             } catch (InputGuardrailException e) {
-                return new ChatResponse(userName, "Desculpe, não consigo processar essa mensagem. Por favor, reformule sua pergunta.");
+                return "Desculpe, não consigo processar essa mensagem. Por favor, reformule sua pergunta.";
+            } catch (OutputGuardrailException e) {
+                return "Desculpe, ocorreu um problema ao processar a resposta. Por favor, tente novamente.";
             }
         } else {
-            return new ChatResponse(null, "Usuário precisa estar autenticado!");
+            return "Usuário precisa estar autenticado!";
         }
+    }
+
+    /**
+     * Retorna os pacotes de viagem disponíveis para uma categoria em formato JSON.
+     * <p>
+     * A resposta é gerada pelo LLM e validada pelo {@code JsonStructureGuard},
+     * que garante que o retorno seja sempre um JSON válido.
+     *
+     * @param category categoria dos pacotes (ADVENTURE ou TREASURES)
+     * @return string contendo JSON com os pacotes da categoria informada
+     */
+    @GET
+    @Path("/packages/{category}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String listPackages(@PathParam("category") String category) {
+        return packageExpert.listPackagesAsJson(category);
     }
 
 }
