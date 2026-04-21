@@ -59,14 +59,27 @@ public class TravelAgentService {
         if (userName == null || userName.isEmpty()) {
             return Multi.createFrom().item("Usuário precisa estar autenticado!");
         }
-        return travelAssistant.chatStream(userName, question, userName)
-                .map(event -> switch (event) {
-                    case ChatEvent.PartialResponseEvent r -> r.getChunk();
-                    case ChatEvent.ChatCompletedEvent c -> "\n[tokens: entrada=" +
-                            c.getChatResponse().tokenUsage().inputTokenCount() +
-                            " saída=" + c.getChatResponse().tokenUsage().outputTokenCount() + "]";
-                    default -> "";
-                });
+        return travelAssistant.chatStream(userName, question, userName).map(this::toStreamChunk);
+    }
+
+    /**
+     * Converte um evento do LLM em texto para envio via SSE.
+     * <p>
+     * Tokens parciais são emitidos conforme chegam; o evento de conclusão
+     * adiciona um resumo do consumo de tokens ao final do stream.
+     *
+     * @param event evento emitido pelo LLM durante o streaming
+     * @return texto correspondente ao evento, ou string vazia para eventos ignorados
+     */
+    private String toStreamChunk(ChatEvent event) {
+        if (event instanceof ChatEvent.PartialResponseEvent partial) {
+            return partial.getChunk();
+        }
+        if (event instanceof ChatEvent.ChatCompletedEvent completed) {
+            var usage = completed.getChatResponse().tokenUsage();
+            return "\n[tokens: entrada=" + usage.inputTokenCount() + " saída=" + usage.outputTokenCount() + "]";
+        }
+        return "";
     }
 
     /**
