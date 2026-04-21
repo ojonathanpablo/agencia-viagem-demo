@@ -2,6 +2,7 @@ package dev.ia.controller;
 
 
 import dev.ia.assistant.TravelAssistant;
+import dev.ia.dto.TravelPackageList;
 import dev.langchain4j.guardrail.InputGuardrailException;
 import dev.langchain4j.guardrail.OutputGuardrailException;
 import jakarta.inject.Inject;
@@ -60,8 +61,9 @@ public class TravelAgentResource {
     @GET
     @Path("/packages/{category}")
     @Produces(MediaType.APPLICATION_JSON)
-    public String listPackages(@PathParam("category") String category) {
-        return packageExpert.listPackagesAsJson(category);
+    public TravelPackageList listPackages(@PathParam("category") String category) {
+        TravelPackageList result = packageExpert.listPackagesAsJson(category);
+        return new TravelPackageList(category, result.pacotes());
     }
 
 }

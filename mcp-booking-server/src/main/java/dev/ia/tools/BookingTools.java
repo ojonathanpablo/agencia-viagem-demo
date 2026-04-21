@@ -140,8 +140,12 @@ public class BookingTools {
             return "Nenhum pacote encontrado para a categoria: " + category;
         }
 
-        return "Pacotes encontrados para a categoria '" + category + "': " + packages.stream()
-                .map(Booking::destination)
-                .toList();
+        return "Pacotes encontrados para a categoria '" + category + "':\n" + packages.stream()
+                .map(b -> "- Destino: " + b.destination()
+                        + " | Categoria: " + b.category()
+                        + " | Data de início: " + b.startDate()
+                        + " | Data de fim: " + b.endDate()
+                        + " | Status: " + b.status())
+                .reduce("", (a, b) -> a + "\n" + b);
     }
 }

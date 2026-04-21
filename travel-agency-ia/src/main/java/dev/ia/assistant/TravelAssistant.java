@@ -3,6 +3,7 @@ package dev.ia.assistant;
 import dev.ia.config.guard.InjectionGuard;
 import dev.ia.config.guard.JsonStructureGuard;
 import dev.ia.config.guard.ToneGuardrail;
+import dev.ia.dto.TravelPackageList;
 import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
@@ -80,12 +81,7 @@ public interface TravelAssistant {
      * @param category categoria dos pacotes a listar (ex: ADVENTURE, TREASURES)
      * @return string contendo JSON válido com os pacotes da categoria informada
      */
-    @SystemMessage("""
-        Você é um assistente da 'Mundo Viagens' especialista em pacotes de viagem.
-        Responda SEMPRE com um JSON válido, sem blocos de código markdown, sem texto adicional.
-        Apenas o JSON puro.
-        """)
-    @UserMessage("Liste os pacotes de viagem disponíveis para a categoria {category} em formato JSON.")
-    @OutputGuardrails(JsonStructureGuard.class)
-    String listPackagesAsJson(String category);
+    @McpToolBox("booking-server")
+    @UserMessage("Liste os pacotes disponíveis para a categoria {category}. O campo 'categoria' do resultado deve ser '{category}'.")
+    TravelPackageList listPackagesAsJson(String category);
 }
