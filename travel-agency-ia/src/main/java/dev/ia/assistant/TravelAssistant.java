@@ -11,6 +11,8 @@ import dev.langchain4j.service.guardrail.InputGuardrails;
 import dev.langchain4j.service.guardrail.OutputGuardrails;
 import io.quarkiverse.langchain4j.RegisterAiService;
 import io.quarkiverse.langchain4j.mcp.runtime.McpToolBox;
+import io.quarkiverse.langchain4j.runtime.aiservice.ChatEvent;
+import io.smallrye.mutiny.Multi;
 
 /**
  * Serviço de IA responsável por atender os clientes da agência 'Mundo Viagens'.
@@ -84,4 +86,32 @@ public interface TravelAssistant {
     @McpToolBox("booking-server")
     @UserMessage("Liste os pacotes disponíveis para a categoria {category}. O campo 'categoria' do resultado deve ser '{category}'.")
     TravelPackageList listPackagesAsJson(String category);
+
+    /**
+     * Versão streaming do chat — emite tokens da resposta um a um via SSE.
+     * <p>
+     * Retorna {@code Multi<ChatEvent>} permitindo ao cliente receber:
+     * <ul>
+     *   <li>{@code ChatEvent.PartialResponse} — cada token gerado pelo LLM</li>
+     *   <li>{@code ChatEvent.Completed} — resposta completa com uso de tokens</li>
+     * </ul>
+     * Guardrails de saída não são aplicados neste método pois a resposta
+     * é emitida token a token antes de estar completa.
+     *
+     * @param memoryId  identificador da sessão para isolamento de memória
+     * @param message   mensagem enviada pelo usuário
+     * @param username  nome do usuário autenticado
+     * @return stream de eventos da resposta
+     */
+    @SystemMessage("""
+        Você é um assistente virtual da 'Mundo Viagens', um especialista em nossos pacotes de viagem e reservas.
+        Sua principal responsabilidade é responder às perguntas dos clientes de forma amigável e precisa,
+        baseando-se exclusivamente nas informações contidas nos documentos que lhe foram fornecidos (RAG)
+        ou utilizando as ferramentas disponíveis para interagir com o sistema de reservas.
+        Nunca invente informações ou use conhecimento externo.
+        """)
+    @McpToolBox("booking-server")
+    @UserMessage("Do what user is asking {message}. The user used for authentication is {username}.")
+    @InputGuardrails(InjectionGuard.class)
+    Multi<ChatEvent> chatStream(@MemoryId String memoryId, String message, String username);
 }

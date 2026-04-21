@@ -5,6 +5,9 @@ import dev.ia.assistant.TravelAssistant;
 import dev.ia.dto.TravelPackageList;
 import dev.langchain4j.guardrail.InputGuardrailException;
 import dev.langchain4j.guardrail.OutputGuardrailException;
+import io.quarkiverse.langchain4j.runtime.aiservice.ChatEvent;
+import io.smallrye.common.annotation.Blocking;
+import io.smallrye.mutiny.Multi;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -58,7 +61,35 @@ public class TravelAgentResource {
      * @param category categoria dos pacotes (ADVENTURE ou TREASURES)
      * @return string contendo JSON com os pacotes da categoria informada
      */
+    /**
+     * Versão streaming do chat — retorna tokens em tempo real via SSE.
+     * O último evento inclui o total de tokens consumidos na requisição.
+     *
+     * @param question  pergunta enviada pelo cliente
+     * @param userName  nome do usuário autenticado
+     * @return stream de tokens + evento final com uso de tokens
+     */
+    @POST
+    @Blocking
+    @Path("/stream")
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    public Multi<String> stream(String question, @HeaderParam("X-User-Name") String userName) {
+        if (userName == null || userName.isEmpty()) {
+            return Multi.createFrom().item("Usuário precisa estar autenticado!");
+        }
+        return packageExpert.chatStream(userName, question, userName)
+                .map(event -> switch (event) {
+                    case ChatEvent.PartialResponseEvent r -> r.getChunk();
+                    case ChatEvent.ChatCompletedEvent c -> "\n[tokens: entrada=" +
+                            c.getChatResponse().tokenUsage().inputTokenCount() +
+                            " saída=" + c.getChatResponse().tokenUsage().outputTokenCount() + "]";
+                    default -> "";
+                });
+    }
+
     @GET
+    @Blocking
     @Path("/packages/{category}")
     @Produces(MediaType.APPLICATION_JSON)
     public TravelPackageList listPackages(@PathParam("category") String category) {
