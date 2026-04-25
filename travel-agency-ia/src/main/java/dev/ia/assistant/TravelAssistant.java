@@ -57,7 +57,7 @@ public interface TravelAssistant {
         'Desculpe, mas não tenho informações sobre isso. Posso ajudar com mais alguma dúvida sobre nossos pacotes?'
         """)
     @McpToolBox("booking-server")
-    @UserMessage("Do what user is asking {message}. The user used for authentication is {username}.")
+    @UserMessage("Mensagem do cliente: {message}. Cliente autenticado: {username}.")
     @InputGuardrails(InjectionGuard.class)
     @OutputGuardrails(ToneGuardrail.class)
     String chat(@MemoryId String memoryId, String message, String username);
@@ -111,7 +111,7 @@ public interface TravelAssistant {
         Nunca invente informações ou use conhecimento externo.
         """)
     @McpToolBox("booking-server")
-    @UserMessage("Do what user is asking {message}. The user used for authentication is {username}.")
+    @UserMessage("Mensagem do cliente: {message}. Cliente autenticado: {username}.")
     @InputGuardrails(InjectionGuard.class)
     Multi<ChatEvent> chatStream(@MemoryId String memoryId, String message, String username);
 }

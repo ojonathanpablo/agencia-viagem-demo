@@ -37,7 +37,6 @@ public class InjectionGuard implements InputGuardrail {
     public InputGuardrailResult validate(UserMessage userMessage) {
         if (expert.isAttack(userMessage.singleText())) {
             return failure("Sua mensagem foi bloqueada por conter instruções não permitidas.");
-
         }
         return InputGuardrailResult.success();
     }

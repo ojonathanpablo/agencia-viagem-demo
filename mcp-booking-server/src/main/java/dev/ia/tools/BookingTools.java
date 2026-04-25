@@ -9,6 +9,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @ApplicationScoped
@@ -57,12 +58,21 @@ public class BookingTools {
             """)
     public String createBooking(
             @ToolArg(description = "Destino da viagem. Exemplo: Paris, Tokyo, Amazonia") String destination,
-            @ToolArg(description = "Data de inicio no formato YYYY-MM-DD. Exemplo: 2026-06-01") LocalDate startDate,
-            @ToolArg(description = "Data de fim no formato YYYY-MM-DD. Exemplo: 2026-06-10") LocalDate endDate,
+            @ToolArg(description = "Data de inicio no formato YYYY-MM-DD. Exemplo: 2026-06-01") String startDate,
+            @ToolArg(description = "Data de fim no formato YYYY-MM-DD. Exemplo: 2026-06-10") String endDate,
             @ToolArg(description = "Categoria do pacote. Valores aceitos: ADVENTURE ou TREASURES") Category category,
             @ToolArg(description = "Nome completo do usuario que esta fazendo a reserva") String userName) {
 
-        Booking booking = bookingService.createBooking(userName, destination, startDate, endDate, category);
+        LocalDate start;
+        LocalDate end;
+        try {
+            start = LocalDate.parse(startDate);
+            end = LocalDate.parse(endDate);
+        } catch (DateTimeParseException e) {
+            return "Datas invalidas. Use o formato YYYY-MM-DD. Exemplo: 2026-06-01";
+        }
+
+        Booking booking = bookingService.createBooking(userName, destination, start, end, category);
         return "Reserva criada com sucesso! ID: " + booking.id +
                 " | Cliente: " + booking.customerName +
                 " | Destino: " + booking.destination +
