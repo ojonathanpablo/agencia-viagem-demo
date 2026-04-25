@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: traveldb
+      POSTGRES_USER: travel
+      POSTGRES_PASSWORD: travel
+    ports:
+      - "5435:5432"
+    volumes:
+      - travel_data:/var/lib/postgresql/data
+
+volumes:
+  travel_data:

@@ -11,141 +11,103 @@ import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Ferramentas MCP expostas ao cliente LangChain4j para gerenciamento de reservas.
- * <p>
- * Cada método anotado com {@link Tool} é registrado automaticamente pelo Quarkus MCP Server
- * e disponibilizado via protocolo MCP (Model Context Protocol) no endpoint SSE.
- * O LLM pode invocar qualquer uma dessas ferramentas durante a geração de uma resposta.
- */
 @ApplicationScoped
 public class BookingTools {
 
     @Inject
     BookingService bookingService;
 
-    /**
-     * Busca e retorna os detalhes completos de uma reserva pelo seu ID.
-     * <p>
-     * Chamada pelo LLM quando o usuário solicita informações sobre uma reserva específica,
-     * como datas, destino, status e categoria.
-     *
-     * @param bookingId ID numérico único da reserva
-     * @return string com os detalhes da reserva, ou mensagem de erro se não encontrada
-     */
-    @Tool(name = "Obtém os detalhes completos de uma reserva com base em seu número de identificação (bookingId).")
+    @Tool(name = "getBookingDetails", description = """
+            Use esta ferramenta para buscar os detalhes de uma reserva.
+            Quando usar: o usuario quer saber informacoes de uma reserva especifica (datas, destino, status).
+            Entrada: o numero ID da reserva.
+            Saida: detalhes completos da reserva ou mensagem de nao encontrada.
+            """)
     public String getBookingDetails(
-            @ToolArg(description = "O ID númerico único da reserva (ex: 12345)") long bookingId) {
+            @ToolArg(description = "ID numerico da reserva. Exemplo: 12345") long bookingId) {
 
         return bookingService.findBookingDetails(bookingId)
                 .map(Booking::toString)
-                .orElse("Reserva com ID " + bookingId + " não encontrada.");
+                .orElse("Reserva com ID " + bookingId + " nao encontrada.");
     }
 
-    /**
-     * Cancela uma reserva existente, validando que o usuário é o titular da reserva.
-     * <p>
-     * O {@code name} deve corresponder exatamente ao {@code customerName} da reserva —
-     * caso contrário, o cancelamento é recusado. Isso impede que um usuário cancele
-     * reservas de outros clientes.
-     *
-     * @param bookingId ID da reserva a ser cancelada
-     * @param name      nome do usuário autenticado que solicita o cancelamento
-     * @return mensagem de sucesso com o ID cancelado, ou mensagem de erro se não autorizado
-     */
-    @Tool(name = """
-                Cancela uma reserva existente com base no seu ID (bookingId).
-                O usuário deve estar autenticado.
+    @Tool(name = "cancelBooking", description = """
+            Use esta ferramenta para cancelar uma reserva existente.
+            Quando usar: o usuario quer cancelar uma reserva e informa o ID e o proprio nome.
+            Regra importante: o nome informado deve ser exatamente o mesmo nome do titular da reserva.
+            Entrada: ID da reserva e nome do usuario.
+            Saida: confirmacao de cancelamento ou mensagem de erro se nao autorizado.
             """)
     public String cancelBooking(
-            @ToolArg(description = "ID da reserva a cancelar") long bookingId,
-            @ToolArg(description = "Usuário que está tentando cancelar a reserva") String name) {
+            @ToolArg(description = "ID numerico da reserva a cancelar. Exemplo: 12345") long bookingId,
+            @ToolArg(description = "Nome completo do usuario que esta solicitando o cancelamento. Deve ser identico ao nome do titular.") String name) {
 
         return bookingService.cancelBooking(bookingId, name)
-                .map(b -> "Reserva " + b.id() + " cancelada com sucesso.")
-                .orElse("Não foi possível cancelar a reserva. Verifique se o ID está correto e se você tem permissão.");
+                .map(booking -> "Reserva " + booking.id + " cancelada com sucesso.")
+                .orElse("Nao foi possivel cancelar a reserva. Verifique se o ID esta correto e se voce e o titular.");
     }
 
-    /**
-     * Cria uma nova reserva de viagem para o usuário autenticado.
-     * <p>
-     * A reserva é criada imediatamente com status {@code CONFIRMED} e um ID gerado
-     * automaticamente pela sequência interna do {@link BookingService}.
-     *
-     * @param destination destino da viagem (ex: "Paris", "Amazônia")
-     * @param startDate   data de início no formato {@code YYYY-MM-DD}
-     * @param endDate     data de fim no formato {@code YYYY-MM-DD}
-     * @param category    categoria do pacote: {@code ADVENTURE} ou {@code TREASURES}
-     * @param userName    nome do usuário autenticado que está fazendo a reserva
-     * @return string com o resumo da reserva criada (ID, cliente, destino, período, status)
-     */
-    @Tool(name = """
-                Cria uma nova reserva de viagem para o usuário autenticado.
-                Requer: destino (destination), data de início (startDate no formato YYYY-MM-DD),
-                data de fim (endDate no formato YYYY-MM-DD) e categoria (category: ADVENTURE ou TREASURES).
+    @Tool(name = "createBooking", description = """
+            Use esta ferramenta para criar uma nova reserva de viagem.
+            Quando usar: o usuario quer reservar uma viagem e informou destino, datas e categoria.
+            Entradas obrigatorias: destino, data de inicio, data de fim, categoria e nome do usuario.
+            Categoria deve ser exatamente: ADVENTURE ou TREASURES.
+            Datas devem estar no formato: YYYY-MM-DD.
+            Saida: resumo da reserva criada com o ID gerado.
             """)
     public String createBooking(
-           @ToolArg(description = "Destino da viagem (ex: Paris, Tokyo, Nova York)") String destination,
-           @ToolArg(description = "Data de início da viagem no formato YYYY-MM-DD") LocalDate startDate,
-           @ToolArg(description = "Data de fim da viagem no formato YYYY-MM-DD") LocalDate endDate,
-           @ToolArg(description = "Categoria do pacote de viagem: ADVENTURE ou TREASURES") Category category,
-           @ToolArg(description = "Nome do usuário que está realizando a reserva") String userName) {
+            @ToolArg(description = "Destino da viagem. Exemplo: Paris, Tokyo, Amazonia") String destination,
+            @ToolArg(description = "Data de inicio no formato YYYY-MM-DD. Exemplo: 2026-06-01") LocalDate startDate,
+            @ToolArg(description = "Data de fim no formato YYYY-MM-DD. Exemplo: 2026-06-10") LocalDate endDate,
+            @ToolArg(description = "Categoria do pacote. Valores aceitos: ADVENTURE ou TREASURES") Category category,
+            @ToolArg(description = "Nome completo do usuario que esta fazendo a reserva") String userName) {
 
         Booking booking = bookingService.createBooking(userName, destination, startDate, endDate, category);
-        return "Reserva criada com sucesso! ID: " + booking.id() +
-                " | Cliente: " + booking.customerName() +
-                " | Destino: " + booking.destination() +
-                " | Período: " + booking.startDate() + " até " + booking.endDate() +
-                " | Status: " + booking.status();
+        return "Reserva criada com sucesso! ID: " + booking.id +
+                " | Cliente: " + booking.customerName +
+                " | Destino: " + booking.destination +
+                " | Periodo: " + booking.startDate + " ate " + booking.endDate +
+                " | Status: " + booking.status;
     }
 
-    /**
-     * Lista todas as reservas associadas a um usuário específico.
-     * <p>
-     * O LLM invoca esta ferramenta quando o usuário pergunta "quais são minhas reservas"
-     * ou solicita um histórico de viagens. A busca é feita por correspondência exata do nome.
-     *
-     * @param userName nome do usuário cujas reservas serão listadas
-     * @return string com todas as reservas do usuário, ou mensagem informando que não há reservas
-     */
-    @Tool(name = "Lista todas as reservas de viagem de um usuário específico.")
+    @Tool(name = "listBookingsByUser", description = """
+            Use esta ferramenta para listar todas as reservas de um usuario.
+            Quando usar: o usuario pergunta "quais sao minhas reservas" ou quer ver seu historico de viagens.
+            Entrada: nome completo do usuario.
+            Saida: lista de todas as reservas do usuario ou mensagem informando que nao ha reservas.
+            """)
     public String listBookingsByUser(
-            @ToolArg(description = "Nome do usuário cujas reservas serão listadas") String userName) {
+            @ToolArg(description = "Nome completo do usuario cujas reservas serao listadas") String userName) {
 
-        List<Booking> userBookings = bookingService.findBookingsByUser(userName);
-        if (userBookings.isEmpty()) {
-            return "Nenhuma reserva encontrada para o usuário: " + userName;
+        List<Booking> bookings = bookingService.findBookingsByUser(userName);
+        if (bookings.isEmpty()) {
+            return "Nenhuma reserva encontrada para o usuario: " + userName;
         }
 
-        return "Reservas de " + userName + ":\n" + userBookings.stream()
+        return "Reservas de " + userName + ":\n" + bookings.stream()
                 .map(Booking::toString)
                 .reduce("", (a, b) -> a + "\n" + b);
     }
 
-    /**
-     * Lista os destinos disponíveis filtrados por categoria de pacote.
-     * <p>
-     * Usado pelo LLM quando o usuário quer explorar opções de viagem, como
-     * "quais pacotes de aventura vocês têm?" ou "mostre destinos TREASURES".
-     *
-     * @param category categoria de filtro: {@code ADVENTURE} ou {@code TREASURES}
-     * @return string com a lista de destinos encontrados na categoria, ou mensagem se vazio
-     */
-    @Tool(name = "Lista os pacotes de viagem disponíveis para uma determinada categoria (ex: ADVENTURE, TREASURES).")
+    @Tool(name = "listPackagesByCategory", description = """
+            Use esta ferramenta para listar pacotes de viagem disponiveis por categoria.
+            Quando usar: o usuario quer explorar opcoes de viagem ou pergunta quais pacotes existem.
+            Entrada: categoria desejada - ADVENTURE (aventura, natureza) ou TREASURES (cultura, historia).
+            Saida: lista de pacotes disponiveis na categoria informada.
+            """)
     public String listPackagesByCategory(
-            @ToolArg(description = "Categoria utilizada como filtro para pacotes") Category category) {
+            @ToolArg(description = "Categoria do pacote. Valores aceitos: ADVENTURE ou TREASURES") Category category) {
 
         List<Booking> packages = bookingService.findPackagesByCategory(category);
         if (packages.isEmpty()) {
             return "Nenhum pacote encontrado para a categoria: " + category;
         }
 
-        return "Pacotes encontrados para a categoria '" + category + "':\n" + packages.stream()
-                .map(b -> "- Destino: " + b.destination()
-                        + " | Categoria: " + b.category()
-                        + " | Data de início: " + b.startDate()
-                        + " | Data de fim: " + b.endDate()
-                        + " | Status: " + b.status())
+        return "Pacotes disponiveis na categoria '" + category + "':\n" + packages.stream()
+                .map(b -> "- Destino: " + b.destination
+                        + " | De: " + b.startDate
+                        + " ate: " + b.endDate
+                        + " | Status: " + b.status)
                 .reduce("", (a, b) -> a + "\n" + b);
     }
 }
