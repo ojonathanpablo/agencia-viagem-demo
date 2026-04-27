@@ -2,7 +2,7 @@ package dev.ia.config;
 
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
-import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
+import dev.langchain4j.data.document.loader.ClassPathDocumentLoader;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -12,8 +12,6 @@ import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
-
-import java.nio.file.Paths;
 
 /**
  * Responsável por carregar e indexar os documentos de pacotes de viagem
@@ -46,9 +44,7 @@ public class DocumentIngester {
      * @param event evento de startup do Quarkus (injetado automaticamente pelo CDI)
      */
     public void onStart(@Observes StartupEvent event) {
-        Document document = FileSystemDocumentLoader.loadDocument(
-                Paths.get("src/main/resources/rag/pakotes-viagem.md")
-        );
+        Document document = ClassPathDocumentLoader.loadDocument("rag/pakotes-viagem.md");
 
         document.metadata().put("type", "packages");
 
