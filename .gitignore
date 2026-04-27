@@ -1,3 +1,7 @@
+# Produção — não versionar
+/docker-compose.yml
+/.env
+
 ### Java
 # Compiled class file
 *.class
