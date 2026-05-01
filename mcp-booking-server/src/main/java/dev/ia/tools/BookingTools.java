@@ -25,9 +25,10 @@ public class BookingTools {
             Saida: detalhes completos da reserva ou mensagem de nao encontrada.
             """)
     public String getBookingDetails(
-            @ToolArg(description = "ID numerico da reserva. Exemplo: 12345") long bookingId) {
+            @ToolArg(description = "ID numerico da reserva. Exemplo: 12345") String bookingId) {
 
-        return bookingService.findBookingDetails(bookingId)
+        return bookingService.parseBookingId(bookingId)
+                .flatMap(bookingService::findBookingDetails)
                 .map(Booking::toString)
                 .orElse("Reserva com ID " + bookingId + " nao encontrada.");
     }
@@ -40,10 +41,11 @@ public class BookingTools {
             Saida: confirmacao de cancelamento ou mensagem de erro se nao autorizado.
             """)
     public String cancelBooking(
-            @ToolArg(description = "ID numerico da reserva a cancelar. Exemplo: 12345") long bookingId,
+            @ToolArg(description = "ID numerico da reserva a cancelar. Exemplo: 12345") String bookingId,
             @ToolArg(description = "Nome completo do usuario que esta solicitando o cancelamento. Deve ser identico ao nome do titular.") String name) {
 
-        return bookingService.cancelBooking(bookingId, name)
+        return bookingService.parseBookingId(bookingId)
+                .flatMap(id -> bookingService.cancelBooking(id, name))
                 .map(booking -> "Reserva " + booking.id + " cancelada com sucesso.")
                 .orElse("Nao foi possivel cancelar a reserva. Verifique se o ID esta correto e se voce e o titular.");
     }

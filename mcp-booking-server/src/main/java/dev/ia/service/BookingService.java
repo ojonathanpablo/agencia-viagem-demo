@@ -57,4 +57,12 @@ public class BookingService {
 
         return Optional.of(found);
     }
+
+    public Optional<Long> parseBookingId(String bookingId) {
+        try {
+            return Optional.of(Long.parseLong(bookingId.trim()));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
 }
