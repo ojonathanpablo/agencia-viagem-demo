@@ -47,14 +47,23 @@ public interface TravelAssistant {
      * @return          resposta gerada pelo modelo após consultar RAG e/ou ferramentas MCP
      */
     @SystemMessage("""
-        Você é um assistente virtual da 'Mundo Viagens', um especialista em nossos pacotes de viagem e reservas.
+        Você é um assistente virtual da 'Mundo Viagens', especialista em pacotes de viagem, reservas e agendamento.
         Sua principal responsabilidade é responder às perguntas dos clientes de forma amigável e precisa,
         baseando-se exclusivamente nas informações contidas nos documentos que lhe foram fornecidos (RAG)
-        ou utilizando as ferramentas disponíveis para interagir com o sistema de reservas.
+        ou utilizando as ferramentas disponíveis para interagir com o sistema de reservas e o Google Calendar.
         Nunca invente informações ou use conhecimento externo.
         Se a resposta para uma pergunta não estiver nos documentos e nenhuma ferramenta puder ajudar,
         você deve responder educadamente:
         'Desculpe, mas não tenho informações sobre isso. Posso ajudar com mais alguma dúvida sobre nossos pacotes?'
+
+        REGRAS OBRIGATÓRIAS PARA O GOOGLE CALENDAR:
+        1. Sempre que o usuário pedir para criar, listar, atualizar ou deletar eventos na agenda,
+           chame PRIMEIRO a tool checkGoogleConnection com o userId do cliente autenticado.
+        2. Se retornar CONECTADO: execute a ação normalmente com as tools do Calendar.
+        3. Se retornar NAO_CONECTADO: informe de forma amigável e exiba o link de autorização.
+           Não tente executar nenhuma ação no Calendar sem conexão confirmada.
+        4. Antes de criar ou deletar qualquer evento, confirme os detalhes com o usuário.
+        5. Use sempre o fuso horário America/Sao_Paulo.
         """)
     @McpToolBox("booking-server")
     @UserMessage("Mensagem do cliente: {message}. Cliente autenticado: {username}.")
@@ -62,56 +71,56 @@ public interface TravelAssistant {
     @OutputGuardrails(ToneGuardrail.class)
     String chat(@MemoryId String memoryId, String message, String username);
 
-    /**
-     * Lista os pacotes de viagem disponíveis para uma categoria e retorna a resposta em JSON válido.
-     * <p>
-     * O {@link JsonStructureGuard} intercepta a resposta do LLM e garante que seja um JSON válido.
-     * Se o LLM retornar texto com markdown ou formato inválido, ele é instruído a reprocessar
-     * até gerar um JSON correto.
-     * <p>
-     * Exemplo de retorno esperado:
-     * <pre>
-     * {
-     *   "categoria": "ADVENTURE",
-     *   "pacotes": [
-     *     { "destino": "Aventura Amazônia", "duracao": "7 dias" },
-     *     { "destino": "Trilha Inca", "duracao": "8 dias" }
-     *   ]
-     * }
-     * </pre>
-     *
-     * @param category categoria dos pacotes a listar (ex: ADVENTURE, TREASURES)
-     * @return string contendo JSON válido com os pacotes da categoria informada
-     */
-    @McpToolBox("booking-server")
-    @UserMessage("Liste os pacotes disponíveis para a categoria {category}. O campo 'categoria' do resultado deve ser '{category}'.")
-    TravelPackageList listPackagesAsJson(String category);
-
-    /**
-     * Versão streaming do chat — emite tokens da resposta um a um via SSE.
-     * <p>
-     * Retorna {@code Multi<ChatEvent>} permitindo ao cliente receber:
-     * <ul>
-     *   <li>{@code ChatEvent.PartialResponse} — cada token gerado pelo LLM</li>
-     *   <li>{@code ChatEvent.Completed} — resposta completa com uso de tokens</li>
-     * </ul>
-     * Guardrails de saída não são aplicados neste método pois a resposta
-     * é emitida token a token antes de estar completa.
-     *
-     * @param memoryId  identificador da sessão para isolamento de memória
-     * @param message   mensagem enviada pelo usuário
-     * @param username  nome do usuário autenticado
-     * @return stream de eventos da resposta
-     */
-    @SystemMessage("""
-        Você é um assistente virtual da 'Mundo Viagens', um especialista em nossos pacotes de viagem e reservas.
-        Sua principal responsabilidade é responder às perguntas dos clientes de forma amigável e precisa,
-        baseando-se exclusivamente nas informações contidas nos documentos que lhe foram fornecidos (RAG)
-        ou utilizando as ferramentas disponíveis para interagir com o sistema de reservas.
-        Nunca invente informações ou use conhecimento externo.
-        """)
-    @McpToolBox("booking-server")
-    @UserMessage("Mensagem do cliente: {message}. Cliente autenticado: {username}.")
-    @InputGuardrails(InjectionGuard.class)
-    Multi<ChatEvent> chatStream(@MemoryId String memoryId, String message, String username);
+//    /**
+//     * Lista os pacotes de viagem disponíveis para uma categoria e retorna a resposta em JSON válido.
+//     * <p>
+//     * O {@link JsonStructureGuard} intercepta a resposta do LLM e garante que seja um JSON válido.
+//     * Se o LLM retornar texto com markdown ou formato inválido, ele é instruído a reprocessar
+//     * até gerar um JSON correto.
+//     * <p>
+//     * Exemplo de retorno esperado:
+//     * <pre>
+//     * {
+//     *   "categoria": "ADVENTURE",
+//     *   "pacotes": [
+//     *     { "destino": "Aventura Amazônia", "duracao": "7 dias" },
+//     *     { "destino": "Trilha Inca", "duracao": "8 dias" }
+//     *   ]
+//     * }
+//     * </pre>
+//     *
+//     * @param category categoria dos pacotes a listar (ex: ADVENTURE, TREASURES)
+//     * @return string contendo JSON válido com os pacotes da categoria informada
+//     */
+//    @McpToolBox("booking-server")
+//    @UserMessage("Liste os pacotes disponíveis para a categoria {category}. O campo 'categoria' do resultado deve ser '{category}'.")
+//    TravelPackageList listPackagesAsJson(String category);
+//
+//    /**
+//     * Versão streaming do chat — emite tokens da resposta um a um via SSE.
+//     * <p>
+//     * Retorna {@code Multi<ChatEvent>} permitindo ao cliente receber:
+//     * <ul>
+//     *   <li>{@code ChatEvent.PartialResponse} — cada token gerado pelo LLM</li>
+//     *   <li>{@code ChatEvent.Completed} — resposta completa com uso de tokens</li>
+//     * </ul>
+//     * Guardrails de saída não são aplicados neste método pois a resposta
+//     * é emitida token a token antes de estar completa.
+//     *
+//     * @param memoryId  identificador da sessão para isolamento de memória
+//     * @param message   mensagem enviada pelo usuário
+//     * @param username  nome do usuário autenticado
+//     * @return stream de eventos da resposta
+//     */
+//    @SystemMessage("""
+//        Você é um assistente virtual da 'Mundo Viagens', um especialista em nossos pacotes de viagem e reservas.
+//        Sua principal responsabilidade é responder às perguntas dos clientes de forma amigável e precisa,
+//        baseando-se exclusivamente nas informações contidas nos documentos que lhe foram fornecidos (RAG)
+//        ou utilizando as ferramentas disponíveis para interagir com o sistema de reservas.
+//        Nunca invente informações ou use conhecimento externo.
+//        """)
+//    @McpToolBox("booking-server")
+//    @UserMessage("Mensagem do cliente: {message}. Cliente autenticado: {username}.")
+//    @InputGuardrails(InjectionGuard.class)
+//    Multi<ChatEvent> chatStream(@MemoryId String memoryId, String message, String username);
 }

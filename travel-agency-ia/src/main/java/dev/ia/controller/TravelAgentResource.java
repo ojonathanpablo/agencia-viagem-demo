@@ -1,9 +1,6 @@
 package dev.ia.controller;
 
-import dev.ia.dto.TravelPackageList;
 import dev.ia.service.TravelAgentService;
-import io.smallrye.common.annotation.Blocking;
-import io.smallrye.mutiny.Multi;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -34,35 +31,35 @@ public class TravelAgentResource {
         return travelAgentService.chat(question, userName);
     }
 
-    /**
-     * Versão streaming do chat — retorna tokens em tempo real via SSE.
-     * O último evento inclui o total de tokens consumidos na requisição.
-     *
-     * @param question  pergunta enviada pelo cliente
-     * @param userName  nome do usuário autenticado
-     * @return stream de tokens + evento final com uso de tokens
-     */
-    @POST
-    @Blocking
-    @Path("/stream")
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.SERVER_SENT_EVENTS)
-    public Multi<String> stream(String question, @HeaderParam("X-User-Name") String userName) {
-        return travelAgentService.chatStream(question, userName);
-    }
-
-    /**
-     * Retorna os pacotes de viagem disponíveis para uma categoria em formato JSON.
-     *
-     * @param category categoria dos pacotes (ex: ADVENTURE, TREASURES)
-     * @return lista de pacotes com a categoria informada
-     */
-    @GET
-    @Blocking
-    @Path("/packages/{category}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public TravelPackageList listPackages(@PathParam("category") String category) {
-        return travelAgentService.listPackages(category);
-    }
+//    /**
+//     * Versão streaming do chat — retorna tokens em tempo real via SSE.
+//     * O último evento inclui o total de tokens consumidos na requisição.
+//     *
+//     * @param question  pergunta enviada pelo cliente
+//     * @param userName  nome do usuário autenticado
+//     * @return stream de tokens + evento final com uso de tokens
+//     */
+//    @POST
+//    @Blocking
+//    @Path("/stream")
+//    @Consumes(MediaType.TEXT_PLAIN)
+//    @Produces(MediaType.SERVER_SENT_EVENTS)
+//    public Multi<String> stream(String question, @HeaderParam("X-User-Name") String userName) {
+//        return travelAgentService.chatStream(question, userName);
+//    }
+//
+//    /**
+//     * Retorna os pacotes de viagem disponíveis para uma categoria em formato JSON.
+//     *
+//     * @param category categoria dos pacotes (ex: ADVENTURE, TREASURES)
+//     * @return lista de pacotes com a categoria informada
+//     */
+//    @GET
+//    @Blocking
+//    @Path("/packages/{category}")
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public TravelPackageList listPackages(@PathParam("category") String category) {
+//        return travelAgentService.listPackages(category);
+//    }
 
 }
