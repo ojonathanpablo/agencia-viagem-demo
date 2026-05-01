@@ -2,6 +2,12 @@
 /docker-compose.yml
 /.env
 
+### IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+
 ### Java
 # Compiled class file
 *.class
